@@ -42,7 +42,7 @@ if ($_SESSION['status'] != "login") {
                         name="plat_nomor" 
                         id="plat_nomor"
                         class="form-control form-control-lg fw-bold" 
-                        placeholder="CONTOH : L 1234 AB" 
+                        placeholder="CONTOH : L1234AB" 
                         maxlength="12"
                         required autofocus>
                     <div id="pesan_plat" class="mt-1 fw-bold" style="font-size: 0.75rem;"></div>
@@ -147,21 +147,14 @@ if ($_SESSION['status'] != "login") {
     const btnSimpan = document.getElementById('btnSimpan');
 
     platInput.addEventListener('input', function (e) {
-        // 1. Auto Format Huruf & Spasi
-        let val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-        let formatted = "";
-        let match = val.match(/^([A-Z]{1,2})(\d{0,4})([A-Z]{0,3})$/);
-
-        if (match) {
-            formatted = match[1] + (match[2] ? " " + match[2] : "") + (match[3] ? " " + match[3] : "");
-        } else {
-            formatted = val;
-        }
-        e.target.value = formatted;
+        // 1. Hanya ubah ke Huruf Besar dan buang karakter aneh (selain huruf & angka)
+        // Spasi tetap diizinkan agar user bisa mengetik manual jika mau
+        let val = e.target.value.toUpperCase().replace(/[^A-Z0-9 ]/g, '');
+        e.target.value = val;
 
         // 2. AJAX Cek Duplikat
-        const currentPlat = e.target.value;
-        if (currentPlat.length > 3) {
+        const currentPlat = val.trim();
+        if (currentPlat.length >= 3) {
             $.ajax({
                 url: 'cek_plat.php',
                 type: 'POST',
@@ -189,17 +182,21 @@ if ($_SESSION['status'] != "login") {
         }
     });
 
-    // 3. Final Validasi Regex saat Submit
+    // 3. Final Validasi saat Submit (Regex Fleksibel)
     document.getElementById('formMobil').addEventListener('submit', function(e) {
-        const plat = platInput.value;
-        const regex = /^[A-Z]{1,2}\s[0-9]{1,4}\s[A-Z]{1,3}$/;
+        const plat = platInput.value.trim();
+        
+        // Regex Baru: 
+        // Boleh ada spasi atau tidak di antara kode wilayah, angka, dan seri belakang
+        // Contoh valid: "L1234", "L 1234", "L1234AB", "L 1234 AB"
+        const regex = /^[A-Z]{1,2}\s?[0-9]{1,4}(\s?[A-Z]{1,3})?$/;
         
         if (!regex.test(plat)) {
             e.preventDefault();
             Swal.fire({
                 icon: 'warning',
                 title: 'PERIKSA KEMBALI',
-                text: 'Format Plat Nomor harus lengkap (Contoh: L 1234 AB)',
+                text: 'Format Plat Nomor tidak valid. Contoh: L 1234 atau L1234AB',
                 confirmButtonColor: '#ffc107'
             });
         }

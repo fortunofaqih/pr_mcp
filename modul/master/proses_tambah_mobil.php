@@ -18,7 +18,12 @@ $status       = isset($_POST['status_aktif']) ? $_POST['status_aktif'] : 'AKTIF'
 $user_login   = $_SESSION['nama'];
 
 // 2. Validasi Format Plat Nomor (Server-Side)
-$pattern = "/^[A-Z]{1,2}\s[0-9]{1,4}\s[A-Z]{1,3}$/";
+// Pattern baru: 
+// ^[A-Z]{1,2}      : 1-2 Huruf depan
+// \s[0-9]{1,4}     : Spasi diikuti 1-4 angka
+// (\s[A-Z]{1,3})?  : (Grup opsional) Spasi diikuti 1-3 huruf belakang
+// Simbol \s? berarti spasi bersifat opsional (boleh ada, boleh tidak)
+$pattern = "/^[A-Z]{1,2}\s?[0-9]{1,4}(\s?[A-Z]{1,3})?$/";
 
 if (!preg_match($pattern, $plat_nomor)) {
     header("location:mobil.php?pesan=format_plat_salah");

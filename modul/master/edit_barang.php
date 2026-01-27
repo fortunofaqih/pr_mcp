@@ -65,7 +65,7 @@ $data = mysqli_fetch_array($query);
                                 <label class="form-label small fw-bold text-muted">SATUAN UTAMA</label>
                                 <select name="satuan" class="form-select">
                                     <?php 
-                                    $satuan_list = ['PCS', 'SET', 'DUS', 'PACK', 'METER', 'KG', 'LITER','LONJOR','SET','ROLL','PACK','UNIT','DRUM','SAK','BOTOL','TUBE','GALON','IKAT','LEMBAR'];
+                                    $satuan_list = ['PCS', 'SET', 'DUS', 'PACK', 'METER', 'CM','LEMBAR','KG', 'LITER','LONJOR','SET','ROLL','PACK','UNIT','DRUM','SAK','BOTOL','TUBE','GALON','IKAT','LEMBAR'];
                                     foreach($satuan_list as $s) {
                                         $selected = ($data['satuan'] == $s) ? 'selected' : '';
                                         echo "<option value='$s' $selected>$s</option>";
@@ -111,8 +111,9 @@ $data = mysqli_fetch_array($query);
                                 <?php 
                                 // Daftar kategori sesuai permintaan Bapak
                                 $kategori_list = [
-                                    'KANTOR'   => 'KANTOR (ATK/UMUM)',
+                                    'UMUM'   => 'KANTOR (ATK/UMUM)',
                                     'BANGUNAN' => 'BANGUNAN',
+                                    'LAS' => 'LAS',
                                     'MOBIL'    => 'BENGKEL - MOBIL',
                                     'LISTRIK'  => 'BENGKEL - LISTRIK',
                                     'DINAMO'   => 'BENGKEL - DINAMO',
