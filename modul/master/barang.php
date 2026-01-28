@@ -59,6 +59,7 @@ if ($_SESSION['status'] != "login") {
                              <option value="DUS">DUS</option>
                              <option value="KG">KG</option>
                              <option value="LITER">LITER</option>
+                             <option value="ML">MiliLiter</option>
                              <option value="METER">METER</option>
                              <option value="CM">CM</option>
                              <option value="LEMBAR">LEMBAR</option>
@@ -67,7 +68,7 @@ if ($_SESSION['status'] != "login") {
                              <option value="ROLL">ROLL</option>
                              <option value="UNIT">UNIT</option>
                              <option value="SAK">SAK</option>
-                             <option value="PAIL">PAIL</option>
+                             <option value="GALON">GALON</option>
                         </select>
                     </div>
                     <div class="col-md-4">
