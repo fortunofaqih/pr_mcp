@@ -13,7 +13,7 @@ if ($_SESSION['status'] != "login") {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/png" href="<?php echo $base_url; ?>assets/img/logo_mcp.png">
+    <link rel="icon" type="image/png" href="/assets/img/logo_mcp.png">
     <title>Input Barang Baru - MCP System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -69,6 +69,8 @@ if ($_SESSION['status'] != "login") {
                              <option value="UNIT">UNIT</option>
                              <option value="SAK">SAK</option>
                              <option value="GALON">GALON</option>
+                             <option value="PAIL">PAIL</option>
+                             <option value="DRUM">DRUM</option>
                         </select>
                     </div>
                     <div class="col-md-4">

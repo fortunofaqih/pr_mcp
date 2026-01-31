@@ -73,10 +73,11 @@ $tgl_akhir = $_POST['tgl_akhir'] ?? date('Y-m-d');
                         $no = 1;
                         $grand_total = 0;
                         
-                        // Query JOIN antara Header (tr_request) dan Detail (tr_request_detail)
+                        // PERBAIKAN: Melakukan kalkulasi manual di SQL karena MySQL 5.6 tidak support Virtual Columns
                         $sql = "SELECT r.no_request, r.tgl_request, r.approve_by, 
                                        rd.nama_barang_manual, rd.jumlah, rd.satuan, 
-                                       rd.harga_satuan_estimasi, rd.subtotal_estimasi,
+                                       rd.harga_satuan_estimasi, 
+                                       (rd.jumlah * rd.harga_satuan_estimasi) AS subtotal_estimasi,
                                        m.plat_nomor
                                 FROM tr_request r
                                 JOIN tr_request_detail rd ON r.id_request = rd.id_request

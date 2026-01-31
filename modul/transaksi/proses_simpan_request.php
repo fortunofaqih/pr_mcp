@@ -14,30 +14,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $user_login    = $_SESSION['nama'];
     $nama_pemesan  = strtoupper(mysqli_real_escape_string($koneksi, $_POST['nama_pemesan']));
 
-    // --- LOCK TABLES agar nomor urut tidak tabrakan jika ada yang simpan bersamaan ---
+    // --- LOCK TABLES ---
     mysqli_query($koneksi, "LOCK TABLES tr_request WRITE, tr_request_detail WRITE");
 
-    // Generate No Request (Sesuai format PR-YYYYMMDD-XXX)
-    // Query mencari prefix 'PR-' agar urutan sort_no akurat
+    // Generate No Request
     $query_no = mysqli_query($koneksi, "SELECT MAX(no_request) as max_code FROM tr_request WHERE no_request LIKE 'PR-$tgl_kode%'");
     $data_no  = mysqli_fetch_array($query_no);
     $last_no  = $data_no['max_code'] ?? '';
     $sort_no  = (int) substr($last_no, -3);
     $new_no   = "PR-" . $tgl_kode . "-" . str_pad(($sort_no + 1), 3, "0", STR_PAD_LEFT);
 
-    // --- SIMPAN HEADER (Satu kali saja) ---
+    // --- SIMPAN HEADER ---
     $query_header = "INSERT INTO tr_request (no_request, tgl_request, nama_pemesan, status_request, created_by) 
                      VALUES ('$new_no', '$tgl_form', '$nama_pemesan', 'PENDING', '$user_login')";
 
     if (mysqli_query($koneksi, $query_header)) {
         $id_header = mysqli_insert_id($koneksi);
 
-        // Ambil data array dari POST
+        // Ambil data array dari POST dengan pengamanan default
         $nama_barang      = $_POST['nama_barang'];
         $kategori_request = $_POST['kategori_request']; 
         $kwalifikasi      = $_POST['kwalifikasi'];
         $id_mobil         = $_POST['id_mobil'];
-        $tipe_request     = $_POST['tipe_request']; // Tambahkan ini
+        $tipe_request     = $_POST['tipe_request']; 
         $jumlah           = $_POST['jumlah'];
         $satuan           = $_POST['satuan'];
         $harga            = $_POST['harga'];
@@ -54,11 +53,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $qty   = (float)($jumlah[$key] ?? 0);
             $sat   = strtoupper(mysqli_real_escape_string($koneksi, $satuan[$key] ?? ''));
             $hrg   = (float)($harga[$key] ?? 0);
-            $subtotal = $qty * $hrg; // Menghitung subtotal untuk database
+            
+            // Perhitungan manual untuk disimpan secara fisik
+            $subtotal = $qty * $hrg;
 
-            // Simpan Detail
-            // Kolom disesuaikan dengan tr_request_detail Bapak: 
-            // id_detail, id_request, nama_barang_manual, id_barang, id_mobil, jumlah, satuan, harga_satuan_estimasi, subtotal_estimasi, kategori_barang, tipe_request, kwalifikasi
+            // Simpan Detail dengan kolom subtotal_estimasi
             $query_detail = "INSERT INTO tr_request_detail 
                             (id_request, nama_barang_manual, id_barang, id_mobil, jumlah, satuan, harga_satuan_estimasi, subtotal_estimasi, kategori_barang, tipe_request, kwalifikasi) 
                             VALUES 
@@ -67,21 +66,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             mysqli_query($koneksi, $query_detail);
         }
 
-       // --- UNLOCK SETELAH BERHASIL ---
         mysqli_query($koneksi, "UNLOCK TABLES");
 
-        // --- REDIRECT DENGAN PARAMETER SWEETALERT ---
         if (isset($_SESSION['role']) && $_SESSION['role'] == 'gang_beli') {
-            // Jika role gang_beli, arahkan ke index pembelian
             header("location:../pembelian/index.php?pesan=berhasil&no=$new_no");
         } else {
-            // Jika user biasa, arahkan ke daftar PR
             header("location:pr.php?pesan=berhasil&no=$new_no");
         }
         exit;
 
     } else {
-        // --- UNLOCK JIKA GAGAL ---
         mysqli_query($koneksi, "UNLOCK TABLES");
         header("location:pr.php?pesan=gagal");
         exit;

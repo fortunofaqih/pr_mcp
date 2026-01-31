@@ -223,7 +223,7 @@ if ($role == 'administrator' || $role == 'manager') {
                 <li class="nav-item"><a href="modul/laporan/data_stock.php" class="nav-link text-warning fw-bold"><i class="fas fa-book me-2"></i> Buku Stok Barang</a></li>
                 <li class="nav-item"><a href="modul/laporan/data_perbandingan.php" class="nav-link text-warning fw-bold"><i class="fas fa-book me-2"></i> Buku Perbandingan</a></li>
                 <li class="nav-item"><a href="modul/laporan/data_pembelian.php" class="nav-link text-warning fw-bold"><i class="fas fa-book me-2"></i> Buku Pembelian</a></li>
-                <li class="nav-item"><a href="modul/laporan/laporan_mutasi_cepat.php" class="nav-link text-warning fw-bold"><i class="fas fa-file-invoice-dollar me-2"></i> Laporan Stok Alfabet</a></li>
+                <li class="nav-item"><a href="modul/laporan/laporan_mutasi_cepat.php" class="nav-link text-warning fw-bold"><i class="fas fa-file-invoice-dollar me-2"></i> Summary Stok (Stok Opname)</a></li>
                 <li class="nav-item"><a href="modul/laporan/laporan_mobil.php" class="nav-link text-warning fw-bold"><i class="fas fa-file-invoice-dollar me-2"></i> Laporan Mobil</a></li>
                 <li class="nav-item"><a href="modul/laporan/laporan_barang_kecil.php" class="nav-link text-warning fw-bold"><i class="fas fa-file-invoice-dollar me-2"></i> Laporan Barang Kecil</a></li>
                 <li class="nav-item"><a href="modul/laporan/laporan_barang_besar.php" class="nav-link text-warning fw-bold"><i class="fas fa-file-invoice-dollar me-2"></i> Laporan Barang Besar</a></li>
