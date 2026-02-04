@@ -50,6 +50,9 @@ while($d = mysqli_fetch_array($q)){
                 <optgroup label="UMUM">
                     <option value="KANTOR" '.($kat_db == "KANTOR" ? "selected" : "").'>KANTOR</option>
                     <option value="BANGUNAN" '.($kat_db == "BANGUNAN" ? "selected" : "").'>BANGUNAN</option>
+                    <option value="LAS" '.($kat_db == "LAS" ? "selected" : "").'>LAS</option>
+                    <option value="MESIN" '.($kat_db == "MESIN" ? "selected" : "").'>MESIN</option>
+                    <option value="LAIN-LAIN" '.($kat_db == "LAIN-LAIN" ? "selected" : "").'>LAIN-LAIN</option>
                 </optgroup>
             </select>
         </td>
