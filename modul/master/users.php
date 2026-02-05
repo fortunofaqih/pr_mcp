@@ -25,17 +25,25 @@ if (isset($_POST['simpan'])) {
     $role          = $_POST['role'];
     $bagian        = $_POST['bagian'];
 
-    mysqli_query($koneksi, "
-        INSERT INTO users 
-        (username,password,nama_lengkap,role,bagian,status_aktif)
-        VALUES
-        ('$username','$password','$nama_lengkap','$role','$bagian','aktif')
-    ");
+    // --- LOGIKA MANUAL INCREMENT ---
+    // Mencari ID tertinggi di tabel users
+    $q_max  = mysqli_query($koneksi, "SELECT MAX(id_user) as max_id FROM users");
+    $r_max  = mysqli_fetch_assoc($q_max);
+    $id_baru = ($r_max['max_id'] ?? 0) + 1;
 
-    header("location:users.php?pesan=berhasil");
-    exit;
+    // Masukkan ID secara eksplisit agar tidak jadi 0
+    $query = "INSERT INTO users 
+              (id_user, username, password, nama_lengkap, role, bagian, status_aktif)
+              VALUES
+              ('$id_baru', '$username', '$password', '$nama_lengkap', '$role', '$bagian', 'aktif')";
+
+    if(mysqli_query($koneksi, $query)){
+        header("location:users.php?pesan=berhasil");
+        exit;
+    } else {
+        die("Gagal simpan user: " . mysqli_error($koneksi));
+    }
 }
-
 /* =======================
    PROSES UPDATE USER
 ======================= */
