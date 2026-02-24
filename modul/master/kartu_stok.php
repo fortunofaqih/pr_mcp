@@ -44,7 +44,7 @@ $running_saldo = $stok_awal;
 <head>
     <meta charset="UTF-8">
     <title>Kartu Stok - <?= $barang['nama_barang'] ?></title>
-    <link rel="icon" type="image/png" href="<?php echo $base_url; ?>assets/img/logo_mcp.png">
+    <link rel="icon" type="image/png" href="/pr_mcp/assets/img/logo_mcp.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -149,7 +149,8 @@ $running_saldo = $stok_awal;
                         <td class="fw-bold">SALDO AWAL PERIODE</td>
                         <td class="text-center">-</td>
                         <td class="text-center">-</td>
-                        <td class="text-center fw-bold"><?= number_format($stok_awal, 0) ?></td>
+                       
+                        <td class="text-center fw-bold"><?= number_format($stok_awal, 2, ',', '.') ?></td>
                     </tr>
 
                     <?php
@@ -165,21 +166,21 @@ $running_saldo = $stok_awal;
                         <!--<td class="text-center"><?= date('d/m/y H:i', strtotime($row['tgl_log'])) ?></td>-ada jam nya-->
                         <td class="text-center"><?= date('d/m/y', strtotime($row['tgl_log'])) ?>
                         <td><?= $row['keterangan'] ?></td>
-                        <td class="text-center text-success fw-bold"><?= ($masuk > 0) ? number_format($masuk, 0) : '-' ?></td>
-                        <td class="text-center text-danger fw-bold"><?= ($keluar > 0) ? number_format($keluar, 0) : '-' ?></td>
-                        <td class="text-center fw-bold bg-light"><?= number_format($running_saldo, 0) ?></td>
+                       <td class="text-center text-success fw-bold"><?= ($masuk > 0) ? number_format($masuk, 2, ',', '.') : '-' ?></td>
+                        <td class="text-center text-danger fw-bold"><?= ($keluar > 0) ? number_format($keluar, 2, ',', '.') : '-' ?></td>
+                        <td class="text-center fw-bold bg-light"><?= number_format($running_saldo, 2, ',', '.') ?></td>
                     </tr>
                     <?php } ?>
                 </tbody>
                 <tfoot class="tabel-footer-custom">
                     <tr>
                         <td colspan="2" class="text-end">TOTAL MUTASI & SALDO AKHIR :</td>
-                        <td class="text-center text-success"><?= number_format($total_masuk, 0) ?></td>
-                        <td class="text-center text-danger"><?= number_format($total_keluar, 0) ?></td>
-                        <td class="text-center bg-warning fw-bold fs-6">
-                            <?= number_format($running_saldo, 0) ?>
+                       <td class="text-center text-success"><?= number_format($total_masuk, 2, ',', '.') ?></td>
+                        <td class="text-center text-danger"><?= number_format($total_keluar, 2, ',', '.') ?></td>
+                       <td class="text-center bg-warning fw-bold fs-6">
+                            <?= number_format($running_saldo, 2, ',', '.') ?>
                         </td>
-                    </tr>
+                                            </tr>
                 </tfoot>
             </table>
         </div>

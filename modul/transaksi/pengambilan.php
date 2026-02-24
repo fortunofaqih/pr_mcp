@@ -23,28 +23,30 @@ if(isset($_POST['simpan'])){
     $id_barang  = $_POST['id_barang'];
     $qty        = (float)$_POST['qty_keluar'];
     $keperluan  = mysqli_real_escape_string($koneksi, strtoupper($_POST['keperluan']));
+    $plat_nomor = mysqli_real_escape_string($koneksi, $_POST['plat_nomor']); // TANGKAP PLAT NOMOR
 
     // --- PERBAIKAN LOGIKA CEK STOK (Berdasarkan LOG) ---
-    $sql_cek = "SELECT 
+  $sql_cek = "SELECT 
                 (SELECT SUM(qty) FROM tr_stok_log WHERE id_barang = '$id_barang' AND tipe_transaksi = 'MASUK') as t_masuk,
                 (SELECT SUM(qty) FROM tr_stok_log WHERE id_barang = '$id_barang' AND tipe_transaksi = 'KELUAR') as t_keluar";
     $res_cek = mysqli_fetch_array(mysqli_query($koneksi, $sql_cek));
     $stok_sebenarnya = ($res_cek['t_masuk'] ?? 0) - ($res_cek['t_keluar'] ?? 0);
     
     if($qty > $stok_sebenarnya){
-        echo "<script>alert('Gagal! Stok tidak mencukupi. Sisa stok akurat: ".$stok_sebenarnya."'); window.location='pengambilan.php';</script>";
+        echo "<script>alert('Gagal! Stok tidak mencukupi.'); window.location='pengambilan.php';</script>";
     } else {
-        // A. Insert ke tabel bon_permintaan
-        $query = mysqli_query($koneksi, "INSERT INTO bon_permintaan (no_permintaan, id_barang, tgl_keluar, qty_keluar, penerima, keperluan) 
-                  VALUES ('$no_req', '$id_barang', '$tgl', '$qty', '$penerima', '$keperluan')");
+        // A. Insert ke tabel bon_permintaan (TAMBAHKAN plat_nomor)
+        $query = mysqli_query($koneksi, "INSERT INTO bon_permintaan (no_permintaan, id_barang, tgl_keluar, qty_keluar, penerima, keperluan, plat_nomor) 
+                  VALUES ('$no_req', '$id_barang', '$tgl', '$qty', '$penerima', '$keperluan', '$plat_nomor')");
         
         $id_cetak = mysqli_insert_id($koneksi); 
 
-        // B. Update stok di master_barang (Sebagai cadangan/backup angka cepat)
+        // B. Update stok (Cadangan)
         mysqli_query($koneksi, "UPDATE master_barang SET stok_akhir = stok_akhir - $qty WHERE id_barang='$id_barang'");
 
-        // C. Catat ke tr_stok_log (PENTING: Ini yang akan dibaca oleh data_barang.php)
-        $keterangan_log = "PENGAMBILAN: $penerima ($keperluan)";
+        // C. Catat ke tr_stok_log (Tambahkan info plat nomor di keterangan agar mudah dilacak)
+        $info_plat = ($plat_nomor != "") ? " [UNIT: $plat_nomor]" : "";
+        $keterangan_log = "PENGAMBILAN: $penerima ($keperluan)$info_plat";
         $waktu_sekarang = date('H:i:s');
         
         mysqli_query($koneksi, "INSERT INTO tr_stok_log (id_barang, tgl_log, tipe_transaksi, qty, keterangan) 
@@ -66,7 +68,7 @@ if(isset($_POST['simpan'])){
 <head>
     <meta charset="UTF-8">
     <title>Permintaan Barang - MCP</title>
-    <link rel="icon" type="image/png" href="<?php echo $base_url; ?>assets/img/logo_mcp.png">
+    <link rel="icon" type="image/png" href="/pr_mcp/assets/img/logo_mcp.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
@@ -85,6 +87,64 @@ if(isset($_POST['simpan'])){
 <body class="py-4">
 
 <div class="container-fluid">
+    
+    <div class="row mb-4">
+        <?php
+       // A. Query Top 5 Barang Paling Sering Diambil (Berdasarkan Frekuensi Transaksi)
+            $sql_top_barang = "SELECT m.nama_barang, COUNT(b.id_barang) as total_transaksi 
+                               FROM bon_permintaan b 
+                               JOIN master_barang m ON b.id_barang = m.id_barang 
+                               GROUP BY b.id_barang 
+                               ORDER BY total_transaksi DESC LIMIT 5";
+            $res_top = mysqli_query($koneksi, $sql_top_barang);
+            $labels_top = []; $data_top = [];
+            while($row = mysqli_fetch_array($res_top)){
+                $labels_top[] = $row['nama_barang'];
+                $data_top[] = $row['total_transaksi'];
+            }
+
+        // B. Query Tren Pengambilan 7 Hari Terakhir (Berdasarkan Frekuensi Transaksi)
+            $labels_tren = []; $data_tren = [];
+            for ($i = 6; $i >= 0; $i--) {
+                $tgl = date('Y-m-d', strtotime("-$i days"));
+                $labels_tren[] = date('d M', strtotime($tgl));
+                
+                // REVISI: Menggunakan COUNT(*) untuk menghitung jumlah baris/transaksi, bukan SUM(qty)
+                $sql_t = mysqli_query($koneksi, "SELECT COUNT(*) as total_transaksi FROM bon_permintaan WHERE tgl_keluar = '$tgl'");
+                $dt_t = mysqli_fetch_array($sql_t);
+                
+                $data_tren[] = $dt_t['total_transaksi'] ?? 0;
+            }
+        ?>
+         <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="m-0 fw-bold text-dark"><i class="fas fa-chart-area me-2 text-primary"></i>STATISTIK PENGAMBILAN</h5>
+        </div>
+        <div class="col-md-6  mb-3">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-3 text-muted">
+                        <i class="fas fa-chart-bar me-2 text-primary"></i>TOP 5 BARANG PALING SERING KELUAR (FREKUENSI)
+                    </h6>
+                    <div style="height: 250px;">
+                        <canvas id="chartTopBarang"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-3 text-muted">
+                        <i class="fas fa-line-chart me-2 text-success"></i>TREN FREKUENSI PENGAMBILAN (7 HARI TERAKHIR)
+                    </h6>
+                    <div style="height: 250px;">
+                        <canvas id="chartTrenHarian"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="card shadow-sm">
         <div class="card-header bg-white py-3">
             <div class="d-flex justify-content-between align-items-center">
@@ -121,17 +181,24 @@ if(isset($_POST['simpan'])){
                             <td class="text-center fw-bold text-primary"><?= $h['no_permintaan'] ?></td>
                             <td class="text-center"><?= date('d/m/Y', strtotime($h['tgl_keluar'])) ?></td>
                             <td class="fw-bold"><?= $h['nama_barang'] ?></td>
-                            <td class="text-center text-danger fw-bold"><?= number_format($h['qty_keluar'], 0) ?> <?= $h['satuan'] ?></td>
+                           <td class="text-center text-danger fw-bold">
+                                <?= number_format($h['qty_keluar'], 2, ',', '.') ?> <?= $h['satuan'] ?>
+                            </td>
                             <td><?= $h['penerima'] ?></td>
                             <td class="small"><?= $h['keperluan'] ?></td>
                             <td class="text-center">
                                 <div class="btn-group">
                                     <a href="cetak_permintaan.php?id=<?= $h['id_bon'] ?>" target="_blank" class="btn btn-sm btn-success"><i class="fas fa-print"></i></a>
                                     
-                                    <button type="button" class="btn btn-sm btn-warning btn-edit" 
-                                            data-id="<?= $h['id_bon'] ?>" data-barang="<?= $h['nama_barang'] ?>"
-                                            data-qty="<?= $h['qty_keluar'] ?>" data-penerima="<?= $h['penerima'] ?>"
-                                            data-keperluan="<?= $h['keperluan'] ?>"><i class="fas fa-edit"></i></button>
+                                  <button type="button" class="btn btn-sm btn-warning btn-edit" 
+                                            data-id="<?= $h['id_bon'] ?>" 
+                                            data-barang="<?= $h['nama_barang'] ?>"
+                                            data-qty="<?= $h['qty_keluar'] ?>" 
+                                            data-penerima="<?= $h['penerima'] ?>"
+                                            data-keperluan="<?= $h['keperluan'] ?>"
+                                             data-tgl="<?= date('Y-m-d', strtotime($h['tgl_keluar'])) ?>"
+                                            data-plat="<?= $h['plat_nomor'] ?>"> <i class="fas fa-edit"></i>
+                                    </button>
 
                                     <a href="proses_hapus_pengambilan.php?id=<?= $h['id_bon'] ?>" 
                                     class="btn btn-sm btn-danger" 
@@ -173,7 +240,19 @@ if(isset($_POST['simpan'])){
                         <label class="small fw-bold mb-1">PENERIMA BARANG</label>
                         <input type="text" name="penerima" class="form-control" required placeholder="NAMA KARYAWAN / TEKNISI">
                     </div>
-
+                    <div class="mb-3">
+                    <label class="small fw-bold mb-1 text-primary">UNIT MOBIL (OPSIONAL)</label>
+                    <select name="plat_nomor" id="plat_nomor" class="form-select select2-mobil">
+                        <option value="">-- BUKAN UNTUK MOBIL (UMUM) --</option>
+                        <?php
+                        $mobil = mysqli_query($koneksi, "SELECT plat_nomor, merk_tipe FROM master_mobil WHERE status_aktif = 'AKTIF' ORDER BY plat_nomor ASC");
+                        while($m = mysqli_fetch_array($mobil)){
+                            echo "<option value='{$m['plat_nomor']}'>{$m['plat_nomor']} - {$m['merk_tipe']}</option>";
+                        }
+                        ?>
+                    </select>
+                    <div class="form-text" style="font-size: 0.7rem;">Pilih jika barang digunakan untuk mobil agar masuk ke Laporan Mobil.</div>
+                </div>
                     <div class="mb-3">
                         <label class="small fw-bold mb-1">PILIH BARANG</label>
                         <select name="id_barang" id="id_barang" class="form-select select2-barang border-primary" onchange="cekStok()" required>
@@ -203,7 +282,13 @@ if(isset($_POST['simpan'])){
                             </div>
                             <div class="col-6 border-start border-2">
                                 <label class="small fw-bold text-danger">JUMLAH KELUAR:</label>
-                                <input type="number" name="qty_keluar" id="qty_input" class="form-control form-control-lg fw-bold border-danger" min="1" step="any" required>
+                                <input type="number" 
+                                   name="qty_keluar" 
+                                   id="qty_input" 
+                                   class="form-control form-control-lg fw-bold border-danger" 
+                                   min="0.01" 
+                                   step="any" 
+                                   required>
                             </div>
                         </div>
                     </div>
@@ -241,6 +326,13 @@ if(isset($_POST['simpan'])){
             placeholder: '-- CARI NAMA BARANG --',
             allowClear: true,
             dropdownParent: $('#modalAmbil') // Solusi agar kolom search bisa diketik di modal
+        });
+        // Inisialisasi Select2 untuk Plat Nomor
+        $('.select2-mobil').select2({
+            theme: 'bootstrap-5',
+            placeholder: '-- CARI PLAT NOMOR --',
+            allowClear: true,
+            dropdownParent: $('#modalAmbil')
         });
 
         // Trigger fungsi cekStok saat Select2 berubah
@@ -283,7 +375,10 @@ if(isset($_POST['simpan'])){
     $('#edit_qty').val(d.qty);
     $('#edit_qty_lama').val(d.qty);
     $('#edit_keperluan').val(d.keperluan);
-    $('#modalEditAmbil').modal('show');
+    $('#edit_tgl').val(d.tgl);      // TAMBAHAN
+    // Set plat nomor yang sudah dipilih sebelumnya
+    $('#edit_plat').val(d.plat);    // TAMBAHAN - biar plat juga ikut terisi
+     $('#modalEditAmbil').modal('show');
 });
 </script>
 <div class="modal fade" id="modalEditAmbil" tabindex="-1">
@@ -301,6 +396,23 @@ if(isset($_POST['simpan'])){
                         <input type="text" id="edit_barang" class="form-control bg-light" readonly>
                         <small class="text-muted">*Barang tidak dapat diubah, silakan hapus & buat baru jika salah barang.</small>
                     </div>
+                    <div class="mb-3">
+                        <label class="small fw-bold text-danger">TANGGAL PENGAMBILAN</label>
+                        <input type="date" name="tgl_keluar" id="edit_tgl" class="form-control border-danger fw-bold" required>
+                    </div>
+                    <div class="mb-3">
+                    <label class="small fw-bold text-primary">UNIT MOBIL (PLAT NOMOR)</label>
+                    <select name="plat_nomor" id="edit_plat" class="form-select">
+                        <option value="">-- MOBIL --</option>
+                        <?php
+                        // Ambil ulang data mobil untuk modal edit
+                        $mobil_edit = mysqli_query($koneksi, "SELECT plat_nomor, merk_tipe FROM master_mobil WHERE status_aktif = 'AKTIF' ORDER BY plat_nomor ASC");
+                        while($me = mysqli_fetch_array($mobil_edit)){
+                            echo "<option value='{$me['plat_nomor']}'>{$me['plat_nomor']} - {$me['merk_tipe']}</option>";
+                        }
+                        ?>
+                    </select>
+                </div>
                     <div class="mb-3">
                         <label class="small fw-bold">PENERIMA</label>
                         <input type="text" name="penerima" id="edit_penerima" class="form-control" required>
@@ -322,5 +434,57 @@ if(isset($_POST['simpan'])){
         </div>
     </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+$(document).ready(function() {
+    // 1. Chart Top Barang (Horizontal Bar)
+    const ctxTop = document.getElementById('chartTopBarang').getContext('2d');
+    new Chart(ctxTop, {
+        type: 'bar',
+        data: {
+            labels: <?= json_encode($labels_top) ?>,
+            datasets: [{
+               label: 'Total Transaksi', // Ubah dari 'Total Qty Keluar'
+                data: <?= json_encode($data_top) ?>,
+                backgroundColor: 'rgba(0, 0, 255, 0.7)',
+                borderRadius: 5,
+            }]
+        },
+        options: {
+            indexAxis: 'y', // Membuat bar jadi horizontal agar nama barang panjang tetap terbaca
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } }
+        }
+    });
+
+    // 2. Chart Tren Harian (Line/Bar Vertical)
+    const ctxTren = document.getElementById('chartTrenHarian').getContext('2d');
+    new Chart(ctxTren, {
+        type: 'line', // Gunakan 'line' untuk tren agar lebih estetik
+        data: {
+            labels: <?= json_encode($labels_tren) ?>,
+            datasets: [{
+                label: 'Jumlah Transaksi', // Ubah dari 'Qty Keluar'
+                data: <?= json_encode($data_tren) ?>,
+                borderColor: '#198754',
+                backgroundColor: 'rgba(25, 135, 84, 0.1)',
+                fill: true,
+                tension: 0.4, // Membuat garis jadi melengkung (smooth)
+                pointRadius: 5,
+                pointBackgroundColor: '#198754'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+});
+</script>
 </body>
 </html>

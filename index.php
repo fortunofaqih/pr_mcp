@@ -211,17 +211,19 @@ if ($role == 'administrator' || $role == 'manager') {
                 <div class="nav-category">-- Transaksi Gudang --</div>
                 <li class="nav-item"><a href="modul/transaksi/pr.php" class="nav-link text-warning fw-bold"><i class="fas fa-file-invoice me-2"></i> Form PR (Request)</a></li>
                 <li class="nav-item"><a href="modul/transaksi/tambah_request_besar.php" class="nav-link text-warning fw-bold"><i class="fas fa-cart-plus me-2"></i> PR Barang Besar</a></li>
+                <li class="nav-item"><a href="modul/transaksi/verifikasi_pembelian.php" class="nav-link text-warning fw-bold"><i class="fas fa-check-double me-2"></i> Verifikasi Pembelian</a></li>
                 <li class="nav-item"><a href="modul/transaksi/pengambilan.php" class="nav-link text-warning fw-bold"><i class="fas fa-dolly me-2"></i> Bon Pengambilan Barang</a></li>
                 <li class="nav-item"><a href="modul/transaksi/retur.php" class="nav-link text-warning fw-bold"><i class="fas fa-undo me-2"></i> Retur Barang</a></li>
                 
                 <div class="nav-category">-- Penyesuaian --</div>
                 <li class="nav-item"><a href="modul/transaksi/koreksi.php" class="nav-link text-warning fw-bold"><i class="fas fa-sync me-2"></i> Koreksi Stok</a></li>
-                <li class="nav-item"><a href="modul/transaksi/bongkaran.php" class="nav-link text-warning fw-bold"><i class="fas fa-tools me-2"></i> Barang Bongkaran</a></li>
+                
+                <!--<li class="nav-item"><a href="modul/transaksi/bongkaran.php" class="nav-link text-warning fw-bold"><i class="fas fa-tools me-2"></i> Barang Bongkaran</a></li>-->
                 <li class="nav-item"><a href="modul/transaksi/pemusnahan.php" class="nav-link text-warning fw-bold"><i class="fas fa-trash-alt me-2"></i> Pemusnahan / Jual</a></li>
                 
                 <div class="nav-category"> -- Laporan & Analisa --</div>
                 <li class="nav-item"><a href="modul/laporan/data_stock.php" class="nav-link text-warning fw-bold"><i class="fas fa-book me-2"></i> Buku Stok Barang</a></li>
-                <li class="nav-item"><a href="modul/laporan/data_perbandingan.php" class="nav-link text-warning fw-bold"><i class="fas fa-book me-2"></i> Buku Perbandingan</a></li>
+               <!-- <li class="nav-item"><a href="modul/laporan/data_perbandingan.php" class="nav-link text-warning fw-bold"><i class="fas fa-book me-2"></i> Buku Perbandingan</a></li>-->
                 <li class="nav-item"><a href="modul/laporan/data_pembelian.php" class="nav-link text-warning fw-bold"><i class="fas fa-book me-2"></i> Buku Pembelian</a></li>
                 <li class="nav-item"><a href="modul/laporan/laporan_mutasi_cepat.php" class="nav-link text-warning fw-bold"><i class="fas fa-file-invoice-dollar me-2"></i> Summary Stok (Stok Opname)</a></li>
                 <li class="nav-item"><a href="modul/laporan/laporan_mobil.php" class="nav-link text-warning fw-bold"><i class="fas fa-file-invoice-dollar me-2"></i> Laporan Mobil</a></li>
@@ -347,73 +349,92 @@ if ($role == 'administrator' || $role == 'manager') {
                     </form>
                 </div>
 
-                <div class="card shadow-sm border-0">
-    <div class="card-header bg-white py-3 border-bottom">
+                <div class="card-header bg-white py-3 border-bottom">
         <h6 class="m-0 fw-bold text-primary text-uppercase"><i class="fas fa-chart-bar me-2"></i> Statistik Aktivitas Bulanan</h6>
-    </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle m-0">
-                <thead class="table-light text-secondary small text-uppercase">
-                    <tr>
-                        <th class="ps-4">Bulan</th>
-                        <th class="text-center">Total PR</th>
-                        <th class="text-center">Item Dibeli</th>
-                        <th>Total Pengeluaran</th>
-                        <th class="text-center">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php
-                    $query_bulanan = mysqli_query($koneksi, "
-                        SELECT m.bulan, 
-                               COALESCE(pr.jml_pr, 0) as jml_pr, 
-                               COALESCE(pb.jml_beli, 0) as jml_beli, 
-                               COALESCE(pb.total_biaya, 0) as total_biaya
-                        FROM (SELECT 1 AS bulan UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6 
-                              UNION SELECT 7 UNION SELECT 8 UNION SELECT 9 UNION SELECT 10 UNION SELECT 11 UNION SELECT 12) m
-                        LEFT JOIN (
-                            SELECT MONTH(tgl_request) as bln, COUNT(*) as jml_pr 
-                            FROM tr_request 
-                            WHERE YEAR(tgl_request) = '$tahun_pilihan' 
-                            GROUP BY MONTH(tgl_request)
-                        ) pr ON m.bulan = pr.bln
-                        LEFT JOIN (
-                            /* PERBAIKAN DI SINI: SUM(qty * harga) */
-                            SELECT MONTH(tgl_beli) as bln, COUNT(*) as jml_beli, SUM(qty * harga) as total_biaya 
-                            FROM pembelian 
-                            WHERE YEAR(tgl_beli) = '$tahun_pilihan' 
-                            GROUP BY MONTH(tgl_beli)
-                        ) pb ON m.bulan = pb.bln
-                        WHERE pr.jml_pr > 0 OR pb.jml_beli > 0 
-                        ORDER BY m.bulan DESC");
-
-                    if(mysqli_num_rows($query_bulanan) > 0){
-                        while($r = mysqli_fetch_array($query_bulanan)) {
-                            $nama_bulan = date("F", mktime(0, 0, 0, $r['bulan'], 10));
-                            ?>
-                            <tr>
-                                <td class="fw-bold ps-4 text-dark"><?php echo strtoupper($nama_bulan); ?></td>
-                                <td class="text-center"><span class="badge rounded-pill bg-info text-dark shadow-sm"><?php echo $r['jml_pr']; ?> Req</span></td>
-                                <td class="text-center"><span class="badge rounded-pill bg-secondary shadow-sm"><?php echo $r['jml_beli']; ?> Item</span></td>
-                                <td class="text-danger fw-bold">Rp <?php echo number_format($r['total_biaya'], 0, ',', '.'); ?></td>
-                                <td class="text-center">
-                                    <a href="modul/laporan/detail_bulan.php?bulan=<?= $r['bulan']; ?>&tahun=<?= $tahun_pilihan; ?>" class="btn btn-sm btn-outline-primary py-1 px-3 rounded-pill fw-bold">
-                                        <i class="fas fa-eye me-1"></i> Details
-                                    </a>
-                                </td>
-                            </tr>
-                            <?php
-                        }
-                    } else {
-                        echo "<tr><td colspan='5' class='text-center py-5 text-muted italic'>TIDAK ADA AKTIVITAS DI TAHUN $tahun_pilihan</td></tr>";
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+    <table class="table table-hover align-middle m-0">
+        <thead class="table-light text-secondary small text-uppercase">
+            <tr>
+                <th class="ps-4">Bulan</th>
+                <!--<th class="text-center">Total PR</th>-->
+                <th class="text-center">Item Dibeli</th>
+                <th>Total Pengeluaran</th>
+                <th class="text-center">Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php
+                // Query yang sudah diperbaiki kolomnya
+                $query_bulanan = mysqli_query($koneksi, "
+                    SELECT m.bulan, 
+                           COALESCE(pr.jml_pr, 0) as jml_pr, 
+                           COALESCE(pb.jml_beli, 0) as jml_beli, 
+                           COALESCE(pb.total_biaya, 0) as total_biaya
+                    FROM (SELECT 1 AS bulan UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6 
+                          UNION SELECT 7 UNION SELECT 8 UNION SELECT 9 UNION SELECT 10 UNION SELECT 11 UNION SELECT 12) m
+                    LEFT JOIN (
+                        SELECT MONTH(tgl_request) as bln, COUNT(*) as jml_pr 
+                        FROM tr_request 
+                        WHERE YEAR(tgl_request) = '$tahun_pilihan' 
+                        GROUP BY MONTH(tgl_request)
+                    ) pr ON m.bulan = pr.bln
+                    LEFT JOIN (
+                        /* PERBAIKAN: Menggunakan tgl_beli_barang */
+                        SELECT MONTH(tgl_beli_barang) as bln, COUNT(*) as jml_beli, SUM(qty * harga) as total_biaya 
+                        FROM pembelian 
+                        WHERE YEAR(tgl_beli_barang) = '$tahun_pilihan' 
+                        GROUP BY MONTH(tgl_beli_barang)
+                    ) pb ON m.bulan = pb.bln
+                    WHERE pr.jml_pr > 0 OR pb.jml_beli > 0 
+                    ORDER BY m.bulan DESC");
+    
+                // Variabel penampung total keseluruhan
+                $grand_total_pr = 0;
+                $grand_total_item = 0;
+                $grand_total_biaya = 0;
+    
+                if(mysqli_num_rows($query_bulanan) > 0){
+                    while($r = mysqli_fetch_array($query_bulanan)) {
+                        $nama_bulan = date("F", mktime(0, 0, 0, $r['bulan'], 10));
+                        
+                        // Menjumlahkan nilai ke total keseluruhan
+                        $grand_total_pr += $r['jml_pr'];
+                        $grand_total_item += $r['jml_beli'];
+                        $grand_total_biaya += $r['total_biaya'];
+                        ?>
+                        <tr>
+                            <td class="fw-bold ps-4 text-dark"><?php echo strtoupper($nama_bulan); ?></td>
+                            <!--<td class="text-center"><span class="badge rounded-pill bg-info text-dark shadow-sm"><?php echo $r['jml_pr']; ?> Req</span></td>-->
+                            <td class="text-center"><span class="badge rounded-pill bg-secondary shadow-sm"><?php echo $r['jml_beli']; ?> Item</span></td>
+                            <td class="text-danger fw-bold">Rp <?php echo number_format($r['total_biaya'], 0, ',', '.'); ?></td>
+                            <td class="text-center">
+                                <a href="modul/laporan/detail_bulan.php?bulan=<?= $r['bulan']; ?>&tahun=<?= $tahun_pilihan; ?>" class="btn btn-sm btn-outline-primary py-1 px-3 rounded-pill fw-bold">
+                                    <i class="fas fa-eye me-1"></i> Details
+                                </a>
+                            </td>
+                        </tr>
+                        <?php
                     }
                     ?>
-                </tbody>
-            </table>
-        </div>
+                    <tr class="table-secondary border-top border-dark">
+                        <td class="ps-4 fw-bold text-uppercase">Total Keseluruhan (<?= $tahun_pilihan ?>)</td>
+                        <!--<td class="text-center fw-bold"><?= number_format($grand_total_pr) ?> Req</td>-->
+                        <td class="text-center fw-bold"><?= number_format($grand_total_item) ?> Item</td>
+                        <td class="text-danger fw-bold" style="font-size: 1.1rem;">Rp <?= number_format($grand_total_biaya, 0, ',', '.') ?></td>
+                        <td></td>
+                    </tr>
+                    <?php
+                } else {
+                    echo "<tr><td colspan='5' class='text-center py-5 text-muted italic'>TIDAK ADA AKTIVITAS DI TAHUN $tahun_pilihan</td></tr>";
+                }
+                ?>
+            </tbody>
+        </table>
     </div>
-</div>
+                </div>
+            </div>
             <?php endif; ?>
 
             <div class="mt-4">
@@ -421,7 +442,7 @@ if ($role == 'administrator' || $role == 'manager') {
                     <i class="fas fa-info-circle fa-lg me-3 text-primary"></i> 
                     <div>
                         Selamat Datang kembali, <strong><?= $nama ?></strong>. 
-                        <?= ($role == 'bagian_pembelian') ? 'Anda memiliki akses untuk memproses permintaan barang.' : 'Berikut adalah ringkasan operasional sistem MCP.' ?>
+                        <?= ($role == 'bagian_pembelian') ? 'Anda memiliki akses untuk memproses permintaan barang.' : 'Berikut adalah ringkasan operasional sistem MCP. ' ?> 
                     </div>
                 </div>
             </div>

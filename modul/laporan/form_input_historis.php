@@ -6,13 +6,19 @@ if (isset($_POST['simpan'])) {
     $nama_barang = mysqli_real_escape_string($koneksi, strtoupper($_POST['nama_barang']));
     $merk        = mysqli_real_escape_string($koneksi, strtoupper($_POST['merk']));
     $supplier    = mysqli_real_escape_string($koneksi, strtoupper($_POST['supplier']));
-    $harga       = $_POST['harga']; 
+    
+    // Membersihkan format titik pada harga sebelum simpan ke database
+    $harga       = str_replace('.', '', $_POST['harga']); 
+    
     $alokasi     = $_POST['alokasi'];
+    $keterangan  = mysqli_real_escape_string($koneksi, $_POST['keterangan']);
+    
     // Penanda khusus untuk data perbandingan
     $no_request  = "COMP-" . date('YmdHis'); 
 
-    $query = "INSERT INTO perbandingan_harga (tgl_data, nama_barang, merk, supplier, harga, alokasi_stok, no_request, sumber_data) 
-              VALUES ('$tgl_beli', '$nama_barang', '$merk', '$supplier', '$harga', '$alokasi', '$no_request', 'MANUAL')";
+    // Query ditambah kolom keterangan
+    $query = "INSERT INTO perbandingan_harga (tgl_data, nama_barang, merk, supplier, harga, alokasi_stok, no_request, sumber_data, keterangan) 
+              VALUES ('$tgl_beli', '$nama_barang', '$merk', '$supplier', '$harga', '$alokasi', '$no_request', 'MANUAL', '$keterangan')";
     
     if (mysqli_query($koneksi, $query)) {
         echo "<script>alert('Data Perbandingan Berhasil Disimpan!'); window.location='data_perbandingan.php';</script>";
@@ -27,7 +33,6 @@ if (isset($_POST['simpan'])) {
 <head>
     <meta charset="UTF-8">
     <title>Input Perbandingan - MCP</title>
-    <link rel="icon" type="image/png" href="<?php echo $base_url; ?>assets/img/logo_mcp.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -87,11 +92,17 @@ if (isset($_POST['simpan'])) {
                             <input type="text" name="supplier" class="form-control" placeholder="Contoh: TB. MAJU JAYA" required>
                         </div>
 
-                        <div class="mb-4">
-                            <label class="form-label small fw-bold">HARGA SATUAN (RP)</label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light">Rp</span>
-                                <input type="number" name="harga" class="form-control" placeholder="0" required>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label small fw-bold">HARGA SATUAN (RP)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light">Rp</span>
+                                    <input type="text" name="harga" id="input_harga" class="form-control" placeholder="0" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label small fw-bold">KETERANGAN</label>
+                                <input type="text" name="keterangan" class="form-control" placeholder="Catatan tambahan...">
                             </div>
                         </div>
 
@@ -110,11 +121,35 @@ if (isset($_POST['simpan'])) {
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
 $(document).ready(function() {
+    // Inisialisasi Select2
     $('#select_barang').select2({ theme: 'bootstrap-5', placeholder: '-- CARI NAMA BARANG --', allowClear: true });
+    
     $('#select_barang').on('select2:select', function (e) {
         var merk = $(e.currentTarget).find(':selected').data('merk');
         $('#input_merk').val(merk);
     });
+
+    // Event Listener untuk format rupiah
+    $('#input_harga').on('keyup', function() {
+        $(this).val(formatRupiah($(this).val()));
+    });
+
+    // Fungsi format rupiah
+    function formatRupiah(angka, prefix) {
+        var number_string = angka.replace(/[^,\d]/g, '').toString(),
+            split = number_string.split(','),
+            sisa = split[0].length % 3,
+            rupiah = split[0].substr(0, sisa),
+            ribuan = split[0].substr(sisa).match(/\d{3}/gi);
+
+        if (ribuan) {
+            separator = sisa ? '.' : '';
+            rupiah += separator + ribuan.join('.');
+        }
+
+        rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
+        return prefix == undefined ? rupiah : (rupiah ? 'Rp. ' + rupiah : '');
+    }
 });
 </script>
 </body>

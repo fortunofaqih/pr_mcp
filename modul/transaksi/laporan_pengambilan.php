@@ -17,7 +17,7 @@ $nama_bulan = date("F", mktime(0, 0, 0, $bln_filter, 10));
 <head>
     <meta charset="UTF-8">
     <title>Laporan Pengambilan Bongkaran - Landscape</title>
-    <link rel="icon" type="image/png" href="<?php echo $base_url; ?>assets/img/logo_mcp.png">
+    <link rel="icon" type="image/png" href="/pr_mcp/assets/img/logo_mcp.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>

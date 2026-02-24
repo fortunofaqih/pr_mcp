@@ -1,79 +1,105 @@
 <?php
 include '../../config/koneksi.php';
-$id = $_GET['id'];
+$id = mysqli_real_escape_string($koneksi, $_GET['id']);
 
 $q = mysqli_query($koneksi, "SELECT * FROM tr_request WHERE id_request = '$id'");
 $h = mysqli_fetch_array($q);
 ?>
-<div class="preview-pr-container shadow-sm">
-    <div class="text-center mb-3">
+<style>
+    .table-preview { border-collapse: collapse; font-size: 0.8rem; }
+    .table-preview th, .table-preview td { 
+        border: 1px solid #dee2e6; 
+        padding: 6px 8px; 
+        vertical-align: top; 
+    }
+    .table-preview thead tr { background: #00008B; color: white; }
+    .table-preview tbody tr:nth-child(even) { background: #f8f9fa; }
+    /* Pastikan kolom keterangan tidak terpotong */
+    .table-preview td:nth-child(4) { 
+        min-width: 150px; 
+        white-space: pre-wrap; 
+        word-break: break-word; 
+    }
+</style>
+
+<div class="preview-pr-container shadow-sm p-4 bg-white rounded">
+    <div class="text-center mb-4">
         <h5 class="mb-0 fw-bold">PURCHASE REQUEST FORM</h5>
-        <small>PT. MUTIARA CAHAYA PLASTINDO</small>
-        <hr>
+        <p class="text-secondary small mb-2">PT. MUTIARA CAHAYA PLASTINDO</p>
+        <div style="border-bottom: 2px double #dee2e6; width: 100%;"></div>
     </div>
     
-    <div class="row mb-2 fw-bold small">
-        <div class="col-4">NO: <?= $h['no_request'] ?></div>
-        <div class="col-4 text-center">PEMESAN: <?= strtoupper($h['nama_pemesan']) ?></div>
-        <div class="col-4 text-end">TGL: <?= date('d/m/Y', strtotime($h['tgl_request'])) ?></div>
+    <div class="row mb-3 fw-bold small">
+        <div class="col-md-3">NO: <span class="text-primary"><?= $h['no_request'] ?></span></div>
+        <div class="col-md-3">PEMESAN: <span class="text-dark"><?= strtoupper($h['nama_pemesan']) ?></span></div>
+        <div class="col-md-3 text-center">PEMBELI: <span class="badge bg-info"><?= $h['nama_pembeli'] ?: '-' ?></span></div>
+        <div class="col-md-3 text-end">TGL: <?= date('d/m/Y', strtotime($h['tgl_request'])) ?></div>
     </div>
 
-    <table class="table-preview">
-        <thead>
-            <tr>
-                <th width="5%">NO</th>
-                <th width="35%">NAMA BARANG</th>
-                <th width="15%">UNIT/MOBIL</th>
-                <th width="10%">QTY</th>
-                <th width="15%">ESTIMASI HARGA</th>
-                <th width="10%">STATUS</th> <th width="10%">SUBTOTAL</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php
-            $no=1; $total=0;
-            $det = mysqli_query($koneksi, "SELECT d.*, m.plat_nomor FROM tr_request_detail d LEFT JOIN master_mobil m ON d.id_mobil = m.id_mobil WHERE d.id_request = '$id'");
-            
-            while($d = mysqli_fetch_array($det)){
-                // Tentukan gaya visual berdasarkan status_item
-                $status_item = $d['status_item']; // Pastikan nama kolom sesuai di database Anda
-                $row_style = "";
-                $badge_status = "";
-                $sub = $d['jumlah'] * $d['harga_satuan_estimasi'];
+    <!-- Keterangan PR level header jika ada -->
+    <?php if(!empty($h['keterangan'])): ?>
+    <div class="alert alert-info py-2 small mb-3">
+        <i class="fas fa-info-circle me-1"></i> <strong>Catatan PR:</strong> <?= $h['keterangan'] ?>
+    </div>
+    <?php endif; ?>
 
-                if($status_item == 'REJECTED'){
-                    $row_style = "style='background-color: #ffe9e9; color: #a94442; text-decoration: line-through;'";
-                    $badge_status = "<span class='badge bg-danger' style='font-size: 0.6rem;'>DITOLAK</span>";
-                } else if($status_item == 'APPROVED'){
-                    $badge_status = "<span class='badge bg-success' style='font-size: 0.6rem;'>DISETUJUI</span>";
-                    $total += $sub; // Total hanya menjumlahkan yang disetujui
-                } else {
-                    $badge_status = "<span class='badge bg-warning text-dark' style='font-size: 0.6rem;'>PENDING</span>";
-                    $total += $sub;
-                }
-
-                echo "<tr $row_style>
-                    <td class='text-center'>$no</td>
-                    <td><b>".strtoupper($d['nama_barang_manual'])."</b><br><small>".$d['kwalifikasi']."</small></td>
-                    <td class='text-center'>".($d['plat_nomor'] ?? '-')."</td>
-                    <td class='text-center'>".$d['jumlah']." ".$d['satuan']."</td>
-                    <td class='text-end'>".number_format($d['harga_satuan_estimasi'])."</td>
-                    <td class='text-center'>$badge_status</td>
-                    <td class='text-end'>".number_format($sub)."</td>
-                </tr>";
-                $no++;
-            }
-            ?>
-        </tbody>
-        <tfoot>
-            <tr class="fw-bold" style="background: #f9f9f9;">
-                <td colspan="6" class="text-end">TOTAL YANG DISETUJUI</td>
-                <td class="text-end text-primary">Rp <?= number_format($total) ?></td>
-            </tr>
-        </tfoot>
-    </table>
-    
-    <div class="mt-3 small italic text-muted">
-        * Keterangan PR: <?= $h['keterangan'] ?>
+    <div class="table-responsive">
+        <table class="table-preview w-100">
+            <thead>
+                <tr>
+                    <th width="4%">NO</th>
+                    <th width="30%">NAMA BARANG / SPEK</th>
+                    <th width="12%">UNIT/MOBIL</th>
+                    <th width="28%">KETERANGAN</th>  
+                    <th width="10%">QTY</th>
+                    <th width="8%">TIPE</th>
+                    <th width="8%">STATUS</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php
+                $no = 1; 
+                $det = mysqli_query($koneksi, "SELECT d.*, m.plat_nomor 
+                                               FROM tr_request_detail d 
+                                               LEFT JOIN master_mobil m ON d.id_mobil = m.id_mobil 
+                                               WHERE d.id_request = '$id'");
+                
+                while($d = mysqli_fetch_array($det)){
+                    $status_item = $d['status_item'];
+                    $badge_status = match($status_item) {
+                        'REJECTED'           => "<span class='badge bg-danger'>DITOLAK</span>",
+                        'TERBELI'            => "<span class='badge bg-primary'>TERBELI</span>",
+                        'APPROVED'           => "<span class='badge bg-success'>DISETUJUI</span>",
+                        'MENUNGGU VERIFIKASI'=> "<span class='badge bg-warning text-dark'>MENUNGGU VER.</span>",
+                        default              => "<span class='badge bg-warning text-dark'>PENDING</span>"
+                    };
+                ?>
+                <tr>
+                    <td class="text-center"><?= $no++ ?></td>
+                    <td>
+                        <div class="fw-bold"><?= strtoupper($d['nama_barang_manual']) ?></div>
+                        <?php if(!empty($d['kwalifikasi'])): ?>
+                        <small class="text-muted"><?= $d['kwalifikasi'] ?></small>
+                        <?php endif; ?>
+                    </td>
+                    <td class="text-center small"><?= ($d['plat_nomor'] ?: '-') ?></td>
+                    <td class="small">
+                        <?php if(!empty($d['keterangan'])): ?>
+                            <?= nl2br(htmlspecialchars($d['keterangan'])) ?>
+                        <?php else: ?>
+                            <span class="text-muted">-</span>
+                        <?php endif; ?>
+                    </td>
+                    <td class="text-center fw-bold"><?= $d['jumlah'] ?> <?= $d['satuan'] ?></td>
+                    <td class="text-center">
+                        <span class="badge <?= $d['tipe_request']=='LANGSUNG'?'bg-danger':'bg-info' ?> small">
+                            <?= $d['tipe_request'] ?>
+                        </span>
+                    </td>
+                    <td class="text-center" style="font-size:0.7rem;"><?= $badge_status ?></td>
+                </tr>
+                <?php } ?>
+            </tbody>
+        </table>
     </div>
 </div>

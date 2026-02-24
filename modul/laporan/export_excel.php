@@ -64,9 +64,9 @@ $query = mysqli_query($koneksi, $sql);
         <th width="400">NAMA BARANG</th>
         <th width="100">RAK</th>
         <th width="100">SATUAN</th>
-        <th width="100">AWAL</th>
+       <!-- <th width="100">AWAL</th>
         <th width="100">MASUK</th>
-        <th width="100">KELUAR</th>
+        <th width="100">KELUAR</th>-->
         <th width="120">STOK AKHIR</th>
         <th width="120">STOK FISIK</th>
         <th width="50">CEK</th>
@@ -91,9 +91,9 @@ $query = mysqli_query($koneksi, $sql);
         <td><?= strtoupper($r['nama_barang']) ?></td>
         <td align="center"><?= $r['lokasi_rak'] ?: '-' ?></td>
         <td align="center"><?= $r['satuan'] ?></td>
-        <td align="center" style="mso-number-format:'\#\,\#\#0';"><?= $r['stok_awal'] ?></td>
+       <!-- <td align="center" style="mso-number-format:'\#\,\#\#0';"><?= $r['stok_awal'] ?></td>
         <td align="center" style="mso-number-format:'\#\,\#\#0'; color:green;"><?= $r['masuk'] ?></td>
-        <td align="center" style="mso-number-format:'\#\,\#\#0'; color:red;"><?= $r['keluar'] ?></td>
+        <td align="center" style="mso-number-format:'\#\,\#\#0'; color:red;"><?= $r['keluar'] ?></td>-->
         <td align="center" style="background-color: #fffdf0; font-weight:bold; mso-number-format:'\#\,\#\#0';"><?= $r['stok_akhir'] ?></td>
         <td style="background-color: #ffffff;"></td>
         <td align="center"></td>

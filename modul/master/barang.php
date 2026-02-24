@@ -13,8 +13,8 @@ if ($_SESSION['status'] != "login") {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/png" href="/assets/img/logo_mcp.png">
     <title>Input Barang Baru - MCP System</title>
+    <link rel="icon" type="image/png" href="/pr_mcp/assets/img/logo_mcp.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -24,6 +24,8 @@ if ($_SESSION['status'] != "login") {
         .card-input { max-width: 600px; margin: 50px auto; border-radius: 15px; overflow: hidden; }
         .bg-mcp { background-color: #0000FF; color: white; }
         input, select { text-transform: uppercase; }
+        /* Style tambahan untuk input harga agar terlihat seperti mata uang */
+        .input-group-text { background-color: #e9ecef; font-weight: bold; color: #495057; }
     </style>
 </head>
 <body>
@@ -42,7 +44,7 @@ if ($_SESSION['status'] != "login") {
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label small fw-bold text-muted">MERK / BRAND</label>
+                    <label class="form-label small fw-bold text-muted">MERK / KWAL.</label>
                     <input type="text" name="merk" class="form-control" placeholder="Contoh: TOYOTA, ASPIRA, GENUINE">
                 </div> 
 
@@ -58,6 +60,7 @@ if ($_SESSION['status'] != "login") {
                              <option value="PCS">PCS</option>
                              <option value="DUS">DUS</option>
                              <option value="KG">KG</option>
+                              <option value="ONS">ONS</option>
                              <option value="LITER">LITER</option>
                              <option value="ML">MiliLiter</option>
                              <option value="METER">METER</option>
@@ -66,17 +69,34 @@ if ($_SESSION['status'] != "login") {
                              <option value="LONJOR">LONJOR</option>
                              <option value="SET">SET</option>
                              <option value="ROLL">ROLL</option>
+                             <option value="PACK">PACK</option>
                              <option value="UNIT">UNIT</option>
                              <option value="SAK">SAK</option>
                              <option value="GALON">GALON</option>
                              <option value="PAIL">PAIL</option>
+                             <option value="TABUNG">TABUNG</option>
+                             <option value="KALENG">KALENG</option>
                              <option value="DRUM">DRUM</option>
+                             <option value="KOTAK">KOTAK</option>
+                             <option value="BATANG">BATANG</option>
+                             <option value="COLT">COLT</option>
+                             <option value="JURIGEN">JURIGEN</option>
                         </select>
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label small fw-bold text-muted">STOK AWAL</label>
-                        <input type="number" name="stok_awal" class="form-control" placeholder="0" required>
+                       <label class="form-label small fw-bold text-muted">STOK AWAL</label>
+                        <input type="number" name="stok_awal" class="form-control" placeholder="0.00" step="0.01" required>
                     </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-muted">HARGA BARANG STOK (OPSIONAL)</label>
+                    <div class="input-group">
+                        <span class="input-group-text">Rp</span>
+                        <input type="text" id="input_harga" class="form-control" placeholder="0">
+                        <input type="hidden" name="harga_barang_stok" id="harga_bersih">
+                    </div>
+                    <div class="form-text">Masukkan harga per satuan (Contoh: 150.000).</div>
                 </div>
 
                 <div class="mb-3">
@@ -133,6 +153,32 @@ if ($_SESSION['status'] != "login") {
 <script>
     const urlParams = new URLSearchParams(window.location.search);
     const pesan = urlParams.get('pesan');
+    
+    const inputHarga = document.getElementById('input_harga');
+    const hargaBersih = document.getElementById('harga_bersih');
+
+inputHarga.addEventListener('keyup', function(e) {
+    // Ambil angka saja dari input
+    let number_string = this.value.replace(/[^,\d]/g, '').toString();
+    let split    = number_string.split(',');
+    let sisa     = split[0].length % 3;
+    let rupiah   = split[0].substr(0, sisa);
+    let ribuan   = split[0].substr(sisa).match(/\d{3}/gi);
+
+    // Tambahkan titik jika input ribuan
+    if (ribuan) {
+        let separator = sisa ? '.' : '';
+        rupiah += separator + ribuan.join('.');
+    }
+
+    rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
+    
+    // Tampilkan ke user
+    this.value = rupiah;
+    
+    // Simpan angka bersih (tanpa titik) ke input hidden untuk dikirim ke PHP
+    hargaBersih.value = number_string.replace(/\./g, '');
+});
 
     if (pesan === 'berhasil') {
         Swal.fire({

@@ -9,7 +9,7 @@ if ($_SESSION['status'] != "login") {
 
 $id = mysqli_real_escape_string($koneksi, $_GET['id']);
 
-// Ambil data barang DAN ambil nilai dari log pertama sebagai Stok Awal
+// Ambil data barang (Termasuk harga_barang_stok) DAN ambil nilai dari log pertama sebagai Stok Awal
 $sql = "SELECT b.*, 
         (SELECT qty FROM tr_stok_log WHERE id_barang = b.id_barang ORDER BY id_log ASC LIMIT 1) as stok_awal_log
         FROM master_barang b 
@@ -17,6 +17,9 @@ $sql = "SELECT b.*,
 
 $query = mysqli_query($koneksi, $sql);
 $data = mysqli_fetch_array($query);
+
+// Format harga untuk tampilan awal di input (menghilangkan desimal jika .00 agar lebih rapi)
+$harga_tampil = number_format($data['harga_barang_stok'], 0, ',', '.');
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -24,7 +27,7 @@ $data = mysqli_fetch_array($query);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Barang - MCP System</title>
-    <link rel="icon" type="image/png" href="<?php echo $base_url; ?>assets/img/logo_mcp.png">
+    <link rel="icon" type="image/png" href="/pr_mcp/assets/img/logo_mcp.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -32,7 +35,8 @@ $data = mysqli_fetch_array($query);
         .card { border-radius: 15px; border: none; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
         .header-edit { background: #00008B; color: white; border-radius: 15px 15px 0 0; padding: 20px; }
         input, select { text-transform: uppercase; }
-        .audit-section { background: #f8f9fa; border-left: 4px solid #0dcaf0; }
+        /* Style untuk input group harga */
+        .input-group-text { background-color: #e9ecef; font-weight: bold; }
     </style>
 </head>
 <body class="py-5">
@@ -56,6 +60,16 @@ $data = mysqli_fetch_array($query);
                             <label class="form-label small fw-bold text-muted">MERK / BRAND</label>
                             <input type="text" name="merk" class="form-control" value="<?= $data['merk']; ?>">
                         </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted">HARGA BARANG STOK (OPSIONAL)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">Rp</span>
+                                <input type="text" id="input_harga" class="form-control" value="<?= $harga_tampil; ?>" placeholder="0">
+                                <input type="hidden" name="harga_barang_stok" id="harga_bersih" value="<?= (float)$data['harga_barang_stok']; ?>">
+                            </div>
+                        </div>
+
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold text-muted">LOKASI RAK</label>
@@ -65,7 +79,7 @@ $data = mysqli_fetch_array($query);
                                 <label class="form-label small fw-bold text-muted">SATUAN UTAMA</label>
                                 <select name="satuan" class="form-select">
                                     <?php 
-                                    $satuan_list = ['PCS', 'SET', 'DUS', 'PACK', 'METER', 'CM','LEMBAR','KG', 'LITER','ML','LONJOR','SET','ROLL','PACK','UNIT','DRUM','SAK','BOTOL','TUBE','GALON','IKAT','LEMBAR','PAIL'];
+                                    $satuan_list = ['PCS', 'SET', 'DUS', 'PACK', 'METER', 'CM','LEMBAR','KG','ONS','LITER','ML','LONJOR','ROLL','UNIT','DRUM','SAK','BOTOL','TUBE','GALON','IKAT','PAIL','TABUNG','KALENG'];
                                     foreach($satuan_list as $s) {
                                         $selected = ($data['satuan'] == $s) ? 'selected' : '';
                                         echo "<option value='$s' $selected>$s</option>";
@@ -91,7 +105,7 @@ $data = mysqli_fetch_array($query);
                                 <div class="col-6">
                                     <label class="form-label small fw-bold text-danger text-uppercase">Sisa (Stok Akhir)</label>
                                     <div class="input-group border-danger">
-                                        <input type="number" name="stok_akhir" class="form-control border-danger fw-bold text-danger" value="<?php echo $data['stok_akhir']; ?>">
+                                        <input type="number" name="stok_akhir" step="any" class="form-control border-danger fw-bold text-danger" value="<?php echo $data['stok_akhir']; ?>">
                                         <span class="input-group-text bg-danger text-white border-danger small"><?php echo $data['satuan']; ?></span>
                                     </div>
                                 </div>
@@ -109,7 +123,6 @@ $data = mysqli_fetch_array($query);
                             <label class="form-label small fw-bold text-muted">KATEGORI BARANG</label>
                             <select name="kategori" class="form-select" required>
                                 <?php 
-                                // Daftar kategori sesuai permintaan Bapak
                                 $kategori_list = [
                                     'UMUM'   => 'KANTOR (ATK/UMUM)',
                                     'BANGUNAN' => 'BANGUNAN',
@@ -121,7 +134,6 @@ $data = mysqli_fetch_array($query);
                                 ];
 
                                 foreach($kategori_list as $key => $val) {
-                                    // Jika kategori di database sama dengan daftar, maka beri label 'selected'
                                     $sel = ($data['kategori'] == $key) ? 'selected' : '';
                                     echo "<option value='$key' $sel>$val</option>";
                                 }
@@ -141,6 +153,31 @@ $data = mysqli_fetch_array($query);
         </div>
     </div>
 </div>
+
+<script>
+    // SCRIPT FORMAT RUPIAH
+    const inputHarga = document.getElementById('input_harga');
+    const hargaBersih = document.getElementById('harga_bersih');
+
+    inputHarga.addEventListener('keyup', function(e) {
+        let number_string = this.value.replace(/[^,\d]/g, '').toString();
+        let split    = number_string.split(',');
+        let sisa     = split[0].length % 3;
+        let rupiah   = split[0].substr(0, sisa);
+        let ribuan   = split[0].substr(sisa).match(/\d{3}/gi);
+
+        if (ribuan) {
+            let separator = sisa ? '.' : '';
+            rupiah += separator + ribuan.join('.');
+        }
+
+        rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
+        this.value = rupiah;
+        
+        // Simpan angka murni ke input hidden
+        hargaBersih.value = number_string.replace(/\./g, '').replace(',', '.');
+    });
+</script>
 
 </body>
 </html>

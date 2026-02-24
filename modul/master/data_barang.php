@@ -13,23 +13,31 @@ if ($_SESSION['status'] != "login") {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/png" href="<?php echo $base_url; ?>assets/img/logo_mcp.png">
+    <link rel="icon" type="image/png" href="/pr_mcp/assets/img/logo_mcp.png">
     <title>Database Master Barang - MCP System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
     
-    <style>
-        :root { --mcp-blue: #0000FF; }
-        body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
-        .navbar-mcp { background: var(--mcp-blue); color: white; }
-        .card { border: none; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
-        table.dataTable thead th { vertical-align: middle; text-align: center; background-color: #f1f4f9; }
-        .uom-badge { background: #e7f0ff; color: #004dc0; font-weight: bold; padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; }
-        /* Warna Baris */
-        .stok-warning { background-color: #c5a337 !important; color: #856404 !important; }
-        .stok-danger { background-color: #860c16 !important; color: #721c24 !important; }
-    </style>
+  <style>
+    :root { --mcp-blue: #0000FF; }
+    body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
+    .navbar-mcp { background: var(--mcp-blue); color: white; }
+    .card { border: none; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+    table.dataTable thead th { vertical-align: middle; text-align: center; background-color: #f1f4f9; }
+    .uom-badge { background: #e7f0ff; color: #004dc0; font-weight: bold; padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; }
+    .price-text { color: #28a745; font-weight: 600; }
+
+    /* PERBAIKAN WARNA BARIS GUDANG */
+    /* Stok Habis (Merah Lembut agar teks hitam tetap terbaca) */
+    .stok-danger { background-color: #ffd6d6 !important; } 
+    /* Stok Tipis (Kuning Lembut) */
+    .stok-warning { background-color: #fff3cd !important; }
+
+    /* Pastikan teks tetap gelap agar terbaca jelas di background warna */
+    .stok-danger td, .stok-warning td { color: #333 !important; }
+    .stok-danger .text-muted, .stok-warning .text-muted { color: #666 !important; }
+</style>
 </head>
 <body>
 
@@ -56,8 +64,7 @@ if ($_SESSION['status'] != "login") {
                             <th class="text-center">Kategori</th> 
                             <th>Lokasi Rak</th>
                             <th class="text-center">Satuan</th>
-                            <!--<th class="text-center">Total Masuk</th>-->
-                            <th class="text-center">Stok Akhir</th>
+                            <th class="text-center">Harga Satuan</th> <th class="text-center">Stok Akhir</th>
                             <th class="text-center">Status</th>
                             <th width="10%" class="text-center">Aksi</th>
                         </tr>
@@ -104,9 +111,13 @@ if ($_SESSION['status'] != "login") {
                                 <small><i class="fas fa-map-marker-alt text-primary me-1"></i> <?= $d['lokasi_rak'] ?: '-'; ?></small>
                             </td>
                             <td class="text-center"><span class="uom-badge"><?= $d['satuan']; ?></span></td>
-                           <!--<td class="text-center text-muted"><?= number_format($masuk, 0); ?></td>-->
+                            
+                            <td class="text-end fw-bold">
+                                <span class="price-text">Rp <?= number_format($d['harga_barang_stok'], 0, ',', '.'); ?></span>
+                            </td>
+
                             <td class="text-center fw-bold">
-                                <?= number_format($stok_akhir_log, 0); ?>
+                            <?= number_format($d['stok_akhir'], 2, ',', '.'); ?> 
                             </td>
                             <td class="text-center">
                                 <span class="badge <?= ($d['status_aktif'] == 'AKTIF') ? 'bg-success' : 'bg-danger'; ?>"><?= $d['status_aktif']; ?></span>
@@ -114,7 +125,6 @@ if ($_SESSION['status'] != "login") {
                             <td class="text-center">
                                 <div class="btn-group">
                                     <a href="edit_barang.php?id=<?= $d['id_barang']; ?>" class="btn btn-sm btn-outline-secondary"><i class="fas fa-edit"></i></a>
-                                    <!--<a href="kartu_stok.php?id=<?= $d['id_barang']; ?>" class="btn btn-sm btn-outline-primary"><i class="fas fa-history"></i></a>-->
                                 </div>
                             </td>
                         </tr>
@@ -134,10 +144,10 @@ if ($_SESSION['status'] != "login") {
 <script>
 $(document).ready(function() {
     $('#tabelBarang').DataTable({
-        "pageLength": 9,
+        "pageLength": 10,
         "language": { "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json" },
         "order": [[ 1, "asc" ]],
-        "columnDefs": [ { "orderable": false, "targets": [0, 8] } ]
+        "columnDefs": [ { "orderable": false, "targets": [0, 9] } ] // Target 9 karena ada kolom baru
     });
 });
 </script>

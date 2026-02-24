@@ -12,7 +12,7 @@ $nama_bulan = date("F", mktime(0, 0, 0, $bulan, 10));
 <head>
     <meta charset="UTF-8">
     <title>Laporan Pembelian Detail - MCP</title>
-    <link rel="icon" type="image/png" href="<?php echo $base_url; ?>assets/img/logo_mcp.png">
+    <link rel="icon" type="image/png" href="/pr_mcp/assets/img/logo_mcp.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -96,8 +96,8 @@ $nama_bulan = date("F", mktime(0, 0, 0, $bulan, 10));
                 $query = "SELECT p.*, r.no_request, r.nama_pemesan as pemesan_asli 
                           FROM pembelian p 
                           LEFT JOIN tr_request r ON p.id_request = r.id_request 
-                          WHERE MONTH(p.tgl_beli)='$bulan' AND YEAR(p.tgl_beli)='$tahun'
-                          ORDER BY p.tgl_beli ASC";
+                          WHERE MONTH(p.tgl_beli_barang)='$bulan' AND YEAR(p.tgl_beli_barang)='$tahun'
+                          ORDER BY p.tgl_beli_barang ASC";
                 
                 $q = mysqli_query($koneksi, $query);
                 
@@ -111,7 +111,7 @@ $nama_bulan = date("F", mktime(0, 0, 0, $bulan, 10));
                         ?>
                         <tr>
                             <td class="text-center"><?= $d['no_request'] ?: '-' ?></td>
-                            <td class="text-center"><?= date('d-m-Y', strtotime($d['tgl_beli'])) ?></td>
+                            <td class="text-center"><?= date('d-m-Y', strtotime($d['tgl_beli_barang'])) ?></td>
                             <td><?= strtoupper($nama_tampil) ?></td>
                             <td class="text-center"><?= strtoupper($d['plat_nomor'] ?: '-') ?></td>
                             <td><?= strtoupper($d['nama_barang_beli']) ?></td>

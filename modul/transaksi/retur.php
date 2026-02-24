@@ -32,25 +32,28 @@ if(isset($_POST['simpan_retur'])){
     $id_barang  = $_POST['id_barang'];
     $qty        = $_POST['qty_retur'];
     $pengembali = mysqli_real_escape_string($koneksi, strtoupper($_POST['pengembali']));
-    $alasan     = mysqli_real_escape_string($koneksi, strtoupper($_POST['alasan_retur']));
+    $alasan      = mysqli_real_escape_string($koneksi, strtoupper($_POST['alasan_retur']));
     $id_user    = $_SESSION['id_user'];
 
     mysqli_begin_transaction($koneksi);
 
     try {
-        // 1. Simpan ke tabel tr_retur
-        mysqli_query($koneksi, "INSERT INTO tr_retur (no_retur, tgl_retur, jenis_retur, id_barang, qty_retur, alasan_retur, pengembali, id_user) 
-                  VALUES ('$no_rt', '$tgl', '$jenis', '$id_barang', '$qty', '$alasan', '$pengembali', '$id_user')");
+        // 1. Simpan ke tabel tr_retur (ID tidak perlu dimasukkan karena sudah AUTO_INCREMENT)
+        $query_retur = "INSERT INTO tr_retur (no_retur, tgl_retur, jenis_retur, id_barang, qty_retur, alasan_retur, pengembali, id_user) 
+                        VALUES ('$no_rt', '$tgl', '$jenis', '$id_barang', '$qty', '$alasan', '$pengembali', '$id_user')";
+        
+        if (!mysqli_query($koneksi, $query_retur)) {
+            throw new Exception("Gagal simpan data retur: " . mysqli_error($koneksi));
+        }
         
         // 2. Tambahkan kembali stok fisik di Master Barang
         mysqli_query($koneksi, "UPDATE master_barang SET stok_akhir = stok_akhir + $qty WHERE id_barang='$id_barang'");
 
         // 3. Catat ke tr_stok_log agar sinkron dengan KARTU STOK
         $keterangan_log = "RETUR ($jenis): DARI $pengembali - $alasan";
-        $tgl_full = $tgl . " " . date('H:i:s'); // Menggabungkan tgl form dengan jam sekarang
-        $user_nama = $_SESSION['nama']; // Mengambil nama user dari session
+        $tgl_full = $tgl . " " . date('H:i:s');
+        $user_nama = $_SESSION['nama_lengkap']; // Pastikan session ini sesuai dengan nama di tabel users
         
-        // SESUAIKAN DENGAN STRUKTUR TABEL ANDA: id_log, id_barang, tgl_log, tipe_transaksi, qty, keterangan, user_input
         $sql_log = "INSERT INTO tr_stok_log (id_barang, tgl_log, tipe_transaksi, qty, keterangan, user_input) 
                     VALUES ('$id_barang', '$tgl_full', 'MASUK', '$qty', '$keterangan_log', '$user_nama')";
         
@@ -59,7 +62,7 @@ if(isset($_POST['simpan_retur'])){
         }
         
         mysqli_commit($koneksi);
-        echo "<script>alert('Berhasil! Stok telah dikembalikan dan tercatat di kartu stok'); window.location='retur.php';</script>";
+        echo "<script>alert('Berhasil! Stok telah dikembalikan ke gudang.'); window.location='retur.php';</script>";
 
     } catch (Exception $e) {
         mysqli_rollback($koneksi);
@@ -72,7 +75,7 @@ if(isset($_POST['simpan_retur'])){
 <head>
     <meta charset="UTF-8">
     <title>Retur Barang - MCP</title>
-    <link rel="icon" type="image/png" href="<?php echo $base_url; ?>assets/img/logo_mcp.png">
+    <link rel="icon" type="image/png" href="/pr_mcp/assets/img/logo_mcp.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
@@ -212,7 +215,8 @@ if(isset($_POST['simpan_retur'])){
                                 <p class="small text-muted mb-0">*Otomatis menambah stok akhir di gudang.</p>
                             </div>
                             <div class="col-md-5">
-                                <input type="number" name="qty_retur" class="form-control form-control-lg fw-bold text-center" min="1" placeholder="0" required>
+                                <input type="number" name="qty_retur" class="form-control form-control-lg fw-bold text-center" 
+                                   placeholder="0.00" step="0.01" min="0.01" required>
                             </div>
                         </div>
                     </div>

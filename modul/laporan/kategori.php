@@ -23,7 +23,7 @@ $nama_bulan = $bulan_indo[$bulan_filter];
 <head>
     <meta charset="UTF-8">
     <title>Laporan Analisis Kategori - MCP</title>
-    <link rel="icon" type="image/png" href="<?php echo $base_url; ?>assets/img/logo_mcp.png">
+    <link rel="icon" type="image/png" href="/pr_mcp/assets/img/logo_mcp.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -72,14 +72,18 @@ $nama_bulan = $bulan_indo[$bulan_filter];
                 <button type="submit" class="btn btn-primary btn-sm px-3">FILTER</button>
             </form>
             <button onclick="window.print()" class="btn btn-success btn-sm"><i class="fas fa-print me-1"></i> CETAK</button>
-            <a href="../../index.php" class="btn btn-danger btn-sm"><i class="fas fa-times"></i></a>
+            <a href="../../index.php" class="btn btn-danger btn-sm"><i class="fas fa-rotate-left"></i> KEMBALI</a>
         </div>
     </div>
 
     <div class="row">
         <?php
-            // PERBAIKAN: Menggunakan SUM(qty * harga)
-            $total_all_query = mysqli_query($koneksi, "SELECT SUM(qty * harga) as grand_total, COUNT(*) as total_transaksi FROM pembelian WHERE MONTH(tgl_beli) = '$bulan_filter' AND YEAR(tgl_beli) = '$tahun_filter'");
+          
+       // PERBAIKAN: Menggunakan tgl_beli_barang agar sinkron dengan dashboard
+        $total_all_query = mysqli_query($koneksi, "SELECT SUM(qty * harga) as grand_total, COUNT(*) as total_transaksi 
+            FROM pembelian 
+            WHERE MONTH(tgl_beli_barang) = '$bulan_filter' 
+            AND YEAR(tgl_beli_barang) = '$tahun_filter'");
             $summary = mysqli_fetch_assoc($total_all_query);
             $grand_total = $summary['grand_total'] ?? 0;
         ?>
@@ -115,14 +119,15 @@ $nama_bulan = $bulan_indo[$bulan_filter];
                             </thead>
                             <tbody>
                                 <?php
-                                // PERBAIKAN: Menggunakan SUM(qty * harga)
-                                $q = mysqli_query($koneksi, "
-                                    SELECT kategori_beli, COUNT(*) as jml_transaksi, SUM(qty * harga) as subtotal
-                                    FROM pembelian
-                                    WHERE MONTH(tgl_beli) = '$bulan_filter' AND YEAR(tgl_beli) = '$tahun_filter'
-                                    GROUP BY kategori_beli
-                                    ORDER BY subtotal DESC
-                                ");
+                                // PERBAIKAN: Menggunakan tgl_beli_barang
+                            $q = mysqli_query($koneksi, "
+                                SELECT kategori_beli, COUNT(*) as jml_transaksi, SUM(qty * harga) as subtotal
+                                FROM pembelian
+                                WHERE MONTH(tgl_beli_barang) = '$bulan_filter' 
+                                AND YEAR(tgl_beli_barang) = '$tahun_filter'
+                                GROUP BY kategori_beli
+                                ORDER BY subtotal DESC
+                            ");
 
                                 $kategori_tertinggi = "";
                                 $biaya_tertinggi = 0;

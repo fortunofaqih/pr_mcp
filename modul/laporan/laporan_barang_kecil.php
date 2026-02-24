@@ -16,7 +16,7 @@ $tgl_akhir = $_GET['tgl_akhir'] ?? date('Y-m-d');
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LAPORAN BARANG KECIL - MCP</title>
-    <link rel="icon" type="image/png" href="<?php echo $base_url; ?>assets/img/logo_mcp.png">
+    <link rel="icon" type="image/png" href="/pr_mcp/assets/img/logo_mcp.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -118,7 +118,7 @@ $tgl_akhir = $_GET['tgl_akhir'] ?? date('Y-m-d');
                     <thead class="table-light text-center">
                     <tr>
                         <th class="col-no">NO</th>
-                        <th class="col-tgl">TANGGAL</th>
+                        <th class="col-tgl">TGL. BELI</th>
                         <th class="col-pr">NO. PR</th>
                         <th class="col-plat">PLAT</th> <th class="col-barang">BARANG</th>
                         <th class="col-supp">SUPPLIER</th>
@@ -147,7 +147,15 @@ $tgl_akhir = $_GET['tgl_akhir'] ?? date('Y-m-d');
                         ?>
                         <tr>
                             <td class="text-center"><?= $no++ ?></td>
-                            <td class="text-center text-nowrap"><?= date('d/m/y', strtotime($d['tgl_beli'])) ?></td>
+                              <td class="text">
+                                <?php 
+                                    if ($d['tgl_beli_barang'] == '0000-00-00' || empty($d['tgl_beli_barang'])) {
+                                        echo "-";
+                                    } else {
+                                        echo date('d/m/Y', strtotime($d['tgl_beli_barang']));
+                                    }
+                                ?>
+                            </td>
                             <td class="fw-bold text-nowrap" style="font-size: 8pt;"><?= $d['no_request'] ?></td>
                             <td class="text-center text-nowrap"><?= $d['plat_nomor'] ?></td> <td><?= $d['nama_barang_beli'] ?></td>
                             <td><?= $d['supplier'] ?></td>
